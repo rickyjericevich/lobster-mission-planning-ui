@@ -1,52 +1,54 @@
 'use client'
 
 import { ComponentPropsWithoutRef, useEffect, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
+import mapboxgl, { GeoJSONSource } from 'mapbox-gl';
 import MapboxDraw, { DrawCreateEvent, DrawDeleteEvent, DrawUpdateEvent } from '@mapbox/mapbox-gl-draw';
-import { Position } from 'geojson'
+import Vector2d from '@/types/Vector2d';
+import { GeoJSON } from 'geojson';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css';
 
+
 export interface InteractiveMapProps extends ComponentPropsWithoutRef<"div"> {
-  setRegionCoords: (coords: Position[] | undefined) => void
+  setRegionVertices: (regionVertices?: Vector2d[]) => void;
+  coveragePathVertices?: Vector2d[];
 }
+
 
 function enablePolygonButton() {
   togglePolygonButton(false);
 }
 
+
 function disablePolygonButton() {
   togglePolygonButton(true);
 }
+
 
 function togglePolygonButton(disable: boolean) {
   const polygonBtn = document.getElementsByClassName('mapbox-gl-draw_polygon')[0] as HTMLButtonElement;
   polygonBtn.disabled = disable;
 }
 
-export default function InteractiveMap({ setRegionCoords, ...props }: InteractiveMapProps) {
+
+export default function InteractiveMap({ setRegionVertices, coveragePathVertices, ...props }: InteractiveMapProps) {
 
   const mapRef = useRef<mapboxgl.Map>()
   const mapContainerRef = useRef()
 
   function onRegionCreated(e: DrawCreateEvent) {
-    console.log('onRegionCreated', e.features)
-    // prevent user from making more regions
-    disablePolygonButton(); // disable the polygon button
-    setRegionCoords(e.features[0].geometry.coordinates[0])
+    disablePolygonButton(); // disable the polygon button to prevent the user form making more regions
+    setRegionVertices(e.features[0].geometry.coordinates[0].map(Vector2d.fromArray))
   }
 
   function onRegionUpdated(e: DrawUpdateEvent) {
-    console.log('onRegionUpdated', e.features)
-    setRegionCoords(e.features[0].geometry.coordinates[0])
+    setRegionVertices(e.features[0].geometry.coordinates[0].map(Vector2d.fromArray))
   }
 
   function onRegionDeleted(e: DrawDeleteEvent) {
-    console.log('onRegionDeleted', e.features)
-    // allow user to make a new region
-    enablePolygonButton(); // enable the polygon button
-    setRegionCoords(undefined)
+    enablePolygonButton(); // enable the polygon button so that the user can make a new region
+    setRegionVertices(undefined)
   }
 
   useEffect(() => {
@@ -67,6 +69,8 @@ export default function InteractiveMap({ setRegionCoords, ...props }: Interactiv
 
     mapRef.current.addControl(draw, 'top-left');
     mapRef.current.addControl(new mapboxgl.GeolocateControl(), 'top-left'); // https://docs.mapbox.com/mapbox-gl-js/api/markers/#geolocatecontrol
+    mapRef.current.addControl(new mapboxgl.ScaleControl());
+    mapRef.current.addControl(new mapboxgl.NavigationControl());
 
     // https://github.com/mapbox/mapbox-gl-draw/blob/main/docs/API.md#events
     mapRef.current.on('draw.create', onRegionCreated);
@@ -78,10 +82,52 @@ export default function InteractiveMap({ setRegionCoords, ...props }: Interactiv
     }
   }, [])
 
-  return <div
-    {...props}
-    id='map-container'
-    ref={mapContainerRef}
-    className="h-full w-full"
-  />
+  useEffect(() => {
+    if (mapRef.current === undefined) return;
+
+    if (coveragePathVertices) {
+      console.log("adding coverage path to map")
+
+      const sourceData: GeoJSON = {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: coveragePathVertices.map(v => v.toArray())
+        }
+      }
+
+      const existingSource: GeoJSONSource | undefined = mapRef.current.getSource('coverage-path');
+      if (existingSource) {
+        existingSource.setData(sourceData);
+        return;
+      }
+
+      mapRef.current.addSource('coverage-path', { type: 'geojson', data: sourceData });
+
+      mapRef.current.addLayer({
+        id: 'coverage-path',
+        type: 'line',
+        source: 'coverage-path',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: { 'line-color': '#000', 'line-width': 8 }
+      });
+    } else { // remove the path line
+      const existingSource: GeoJSONSource | undefined = mapRef.current.getSource('coverage-path');
+      if (existingSource) existingSource.setData({
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates: [] }
+      });
+    }
+  }, [coveragePathVertices])
+
+  return (
+    <div
+      {...props}
+      id='map-container'
+      ref={mapContainerRef}
+      className="h-full w-full"
+    />
+  )
 };

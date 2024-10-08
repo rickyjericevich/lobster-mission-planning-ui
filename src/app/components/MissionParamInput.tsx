@@ -1,89 +1,90 @@
-import { ComponentPropsWithoutRef } from "react"
-import { useFormState } from "react-dom";
+import { ComponentPropsWithoutRef, useState } from "react";
 import MissionParams from "@/types/MissionParams";
 
 export interface MissionParameterInputProps extends ComponentPropsWithoutRef<"div"> {
-    setMissionParams: (missionParams: MissionParams) => void
+    setMissionParams: (missionParams: MissionParams) => void;
 }
 
 export default function MissionParamaterInput({ setMissionParams, ...props }: MissionParameterInputProps) {
+    const [cruiseSpeedMetresPerSecond, setCruiseSpeedMetresPerSecond] = useState(1);
+    const [waterFlowHeadingDegrees, setWaterFlowAngleDegrees] = useState(0); // 0° is north, 90° is east etc
+    const [altitudeMetres, setAltitude] = useState(2);
 
-    const [formState, formAction] = useFormState(handleSubmitForm, null);
+    function handleSubmit() {
+        const missionParams: MissionParams = {
+            cruiseSpeedMetresPerSecond,
+            waterFlowHeadingDegrees,
+            altitudeMetres
+        };
 
-    function handleSubmitForm(previousState?: any, formData?: FormData) {
-
-        if (!formData) return;
-
-        // convert formdata to object
-        const missionParams: { [key: string]: any } = {}
-        formData.forEach((val, key) => missionParams[key] = isNaN(+val) ? val : +val) // convert string numbers to numbers (not necessary - API accepts string numbers too)
-        console.log("FORMDATA", missionParams)
-
-        // console.log(Object.fromEntries(formData.entries()))
-        setMissionParams(missionParams as MissionParams)
+        setMissionParams(missionParams);
     }
 
+
     return (
-        <div {...props}>
+        <div {...props} className="p-6 mx-auto bg-white rounded-xl shadow-md space-y-4">
+            <h1 className="text-2xl font-bold mb-4">Mission Parameters</h1>
 
-            <h1>Mission Parameters</h1>
-
-            {/* Should probably add a way to select the appropriate robot ? */}
-
-            <form action={formAction}>
-
-                <label>
-
-                    <span className="block">Altitude (m):</span>
-
+            <div className="space-y-2">
+                <label className="block">
+                    <span className="block font-medium text-gray-700">Altitude: {altitudeMetres} m</span>
                     <input
-                        type="number"
+                        type="range"
                         min={0}
                         max={10}
-                        step={0.5}
-                        name="altitudeMetres"
+                        step={0.1}
+                        value={altitudeMetres}
+                        onChange={(e) => setAltitude(Number(e.target.value))}
+                        className="mt-1 block w-full text-sm p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                         required
-                    // className="mt-1 block w-full text-sm  dark:text-gray-300 dark:border-gray-600"
                     />
-
                 </label>
+            </div>
 
-                <label>
-
-                    <span className="block">Cruise Speed (m/s):</span>
-
+            <div className="space-y-2">
+                <label className="block">
+                    <span className="block font-medium text-gray-700">Cruise speed relative to sea bed: {cruiseSpeedMetresPerSecond.toFixed(1)} m/s</span>
                     <input
-                        type="number"
+                        type="range"
                         min={0}
-                        max={10}
-                        step={0.5}
-                        name="cruiseSpeedMetresPerSecond"
-                        required
-                    // className="mt-1 block w-full text-sm  dark:text-gray-300 dark:border-gray-600"
+                        max={5}
+                        step={0.1}
+                        value={cruiseSpeedMetresPerSecond}
+                        onChange={(e) => setCruiseSpeedMetresPerSecond(Number(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-
                 </label>
+            </div>
 
-                <label>
-
-                    <span className="block">Water current heading (degrees measured clockwise from true north):</span>
-
+            <div className="space-y-2">
+                <label className="block">
+                    <span className="block font-medium text-gray-700">Water current heading: {waterFlowHeadingDegrees}°</span>
                     <input
-                        type="number"
+                        type="range"
                         min={0}
-                        max={10}
+                        max={360}
                         step={1}
-                        name="waterCurrentDirectionMetresPerSecond"
-                        required
-                    // className="mt-1 block w-full text-sm  dark:text-gray-300 dark:border-gray-600"
+                        value={waterFlowHeadingDegrees}
+                        onChange={(e) => setWaterFlowAngleDegrees(Number(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-
+                    <div className="mt-2 flex justify-center items-center">
+                        <div
+                            className="h-32 w-32 rounded-full border-4 border-indigo-500 flex justify-center items-center relative"
+                            style={{ transform: `rotate(${waterFlowHeadingDegrees}deg)` }}
+                        >
+                            <div className="absolute h-3 w-3 bg-indigo-500 rounded-full top-0"></div>
+                        </div>
+                    </div>
                 </label>
+            </div>
 
-                <button type="submit">Save</button>
-
-            </form>
+            <button
+                onClick={handleSubmit}
+                className="w-full py-2 px-4 bg-indigo-500 text-white font-semibold rounded-md shadow hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+                Save
+            </button>
         </div>
-    )
-
+    );
 }
