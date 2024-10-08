@@ -8,8 +8,8 @@ export interface MissionParameterInputProps extends ComponentPropsWithoutRef<"di
 
 export default function MissionParameterInput({ setMissionParams, estimatedMissionTimeSeconds, ...props }: MissionParameterInputProps) {
     const [cruiseSpeedMetresPerSecond, setCruiseSpeedMetresPerSecond] = useState(1);
-    const [waterFlowHeadingDegrees, setWaterFlowAngleDegrees] = useState(0); // 0° is north, 90° is east etc
-    const [altitudeMetres, setAltitude] = useState(2);
+    const [waterFlowHeadingDegrees, setWaterFlowHeadingDegrees] = useState(0); // 0° is north, 90° is east etc
+    const [altitudeMetres, setAltitudeMetres] = useState(2);
     const [isModified, setIsModified] = useState(false);
 
     function handleSubmit() {
@@ -24,12 +24,11 @@ export default function MissionParameterInput({ setMissionParams, estimatedMissi
     }
 
     function formatTime(seconds: number | undefined): string {
-        console.log("seconds", seconds);
         if (seconds === undefined) return 'N/A';
 
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const remainingSeconds = seconds % 60;
+        const hours = Math.floor(seconds / 3600),
+            minutes = Math.floor((seconds % 3600) / 60),
+            remainingSeconds = seconds % 60;
 
         return [
             hours > 0 ? `${hours}h` : null,
@@ -60,7 +59,7 @@ export default function MissionParameterInput({ setMissionParams, estimatedMissi
                         max={10}
                         step={0.1}
                         value={altitudeMetres}
-                        onChange={(e) => setAltitude(Number(e.target.value))}
+                        onChange={(e) => setAltitudeMetres(Number(e.target.value))}
                         required
                     />
                 </label>
@@ -89,7 +88,7 @@ export default function MissionParameterInput({ setMissionParams, estimatedMissi
                         max={360}
                         step={1}
                         value={waterFlowHeadingDegrees}
-                        onChange={(e) => setWaterFlowAngleDegrees(Number(e.target.value))}
+                        onChange={(e) => setWaterFlowHeadingDegrees(Number(e.target.value))}
                     />
                     <div className="mt-2 flex justify-center items-center">
                         <div

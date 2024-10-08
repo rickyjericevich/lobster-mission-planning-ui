@@ -86,8 +86,6 @@ export default function InteractiveMap({ setRegionVertices, coveragePathVertices
     if (mapRef.current === undefined) return;
 
     if (coveragePathVertices) {
-      console.log("adding coverage path to map")
-
       const sourceData: GeoJSON = {
         type: 'Feature',
         properties: {},

@@ -24,9 +24,6 @@ export default function MissionPlanner() {
   }
 
   useEffect(() => {
-    console.log("regionVertices", regionVertices)
-    console.log("missionParams", missionParams);
-
     if (missionParams === undefined || regionVertices === undefined) {
       setPathVertices(undefined);
       return;
