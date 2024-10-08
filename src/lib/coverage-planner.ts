@@ -2,6 +2,7 @@ import Vector2d from "@/types/Vector2d";
 import Line2d from "@/types/Line2d";
 import LineSegment2d from "@/types/LineSegment2d";
 import Area from "@/types/Area";
+import CoveragePathPlan from "@/types/CoveragePathPlan";
 
 function toRadians(degrees: number) {
     return degrees * Math.PI / 180;
@@ -14,6 +15,17 @@ function offsetLongLatByDistance(distanceMetres: number, referenceLatitudeDegree
     // https://gis.stackexchange.com/questions/2951/algorithm-for-offsetting-a-latitude-longitude-by-some-amount-of-meters
     // improve this approximation
     return distanceMetres / 111_111 * Math.sqrt(1 + Math.cos(toRadians(referenceLatitudeDegrees)) ** 2);
+}
+
+function longLatToMetres(coord1: Vector2d, coord2: Vector2d, earth_radius = 6371e3): number {
+    // haversine formula
+    // var R = 6378.137; // Radius of earth in KM
+    const dLat = toRadians(coord2.y) - toRadians(coord1.y);
+    const dLon = toRadians(coord2.x) - toRadians(coord1.x);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(coord1.y)) * Math.cos(toRadians(coord2.y)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return earth_radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 // rearrange vertices such that the vertex fuRthest to the left is the first element
@@ -43,7 +55,7 @@ function getScanArea(altitudeMetres: number): Area {
     return { length, width: length };
 }
 
-export function getCoveragePathVertices(polygonVertices: Vector2d[], waterFlowHeadingDegrees: number, altitudeMetres: number) {
+export function getCoveragePathVertices(polygonVertices: Vector2d[], cruiseSpeedMetresPerSecond: number, waterFlowHeadingDegrees: number, altitudeMetres: number) {
     // remove last vertex if it's the same as the first
     if (polygonVertices[0] === polygonVertices[polygonVertices.length - 1]) polygonVertices.pop();
     polygonVertices = putFurthestLeftVertexFirst(polygonVertices); // put the vertex furthest to the left first. This will be the robot's starting point
@@ -95,5 +107,17 @@ export function getCoveragePathVertices(polygonVertices: Vector2d[], waterFlowHe
     // the work done on each segment is proportional to the dot product of the segment and the flow direction
     // the total work done is the sum of the work done on each segment
 
-    return pathVertices;
+    // calculate the time taken to traverse the path
+    const totalTime = pathVertices.reduce((totalTime, vertex, i) => {
+        if (i === 0) return totalTime;
+        return totalTime + longLatToMetres(vertex, pathVertices[i - 1]) / cruiseSpeedMetresPerSecond;
+    }, 0);
+
+    console.log("Total time " + totalTime);
+
+    const pathPlan: CoveragePathPlan = {
+        vertices: pathVertices,
+        estimatedMissionTimeSeconds: totalTime
+    }
+    return pathPlan;
 }

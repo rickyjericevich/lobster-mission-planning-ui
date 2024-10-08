@@ -43,7 +43,7 @@ export default function InteractiveMap({ setRegionVertices, coveragePathVertices
   }
 
   function onRegionUpdated(e: DrawUpdateEvent) {
-    setRegionVertices(e.features[0].geometry.coordinates[0].map(Vector2d.fromArray))
+    setRegionVertices(e.features[0].geometry.coordinates[0]?.map(Vector2d.fromArray))
   }
 
   function onRegionDeleted(e: DrawDeleteEvent) {
@@ -52,7 +52,7 @@ export default function InteractiveMap({ setRegionVertices, coveragePathVertices
   }
 
   useEffect(() => {
-    mapboxgl.accessToken = 'pk.eyJ1Ijoicmlja3lqZXJpY2V2aWNoIiwiYSI6ImNtMXg5ejUwZDA0aDgybHM4Nm12bjB1MnYifQ.Kp6tSVlV-7ydF9M2KHBEVg'
+    mapboxgl.accessToken = 'pk.eyJ1Ijoicmlja3lqZXJpY2V2aWNoIiwiYSI6ImNtMXg5ejUwZDA0aDgybHM4Nm12bjB1MnYifQ.Kp6tSVlV-7ydF9M2KHBEVg' // WARNING: move to env file!
 
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
@@ -110,7 +110,7 @@ export default function InteractiveMap({ setRegionVertices, coveragePathVertices
         type: 'line',
         source: 'coverage-path',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': '#000', 'line-width': 8 }
+        paint: { 'line-color': '#667eea', 'line-opacity': 0.5, 'line-width': 8 } // indigo-500
       });
     } else { // remove the path line
       const existingSource: GeoJSONSource | undefined = mapRef.current.getSource('coverage-path');
@@ -127,7 +127,7 @@ export default function InteractiveMap({ setRegionVertices, coveragePathVertices
       {...props}
       id='map-container'
       ref={mapContainerRef}
-      className="h-full w-full"
+      className="full-screen-div"
     />
   )
 };

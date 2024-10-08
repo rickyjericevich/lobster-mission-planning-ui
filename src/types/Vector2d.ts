@@ -7,13 +7,17 @@ export default class Vector2d {
         this.y = y;
     }
 
-    
+
     static fromArray(arr: number[]): Vector2d {
         return new Vector2d(arr[0], arr[1]);
     }
 
     toArray(): number[] {
         return [this.x, this.y];
+    }
+
+    distance(other: Vector2d): number {
+        return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
     }
 
     add(other: Vector2d): Vector2d {
