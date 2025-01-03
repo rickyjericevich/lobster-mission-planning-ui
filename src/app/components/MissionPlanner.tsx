@@ -5,45 +5,39 @@ import InteractiveMap from "./InteractiveMap";
 import MissionParameterInput from "./MissionParamInput";
 import MissionParams from "@/types/MissionParams";
 import { getCoveragePathVertices } from "@/lib/coverage-planner";
-import Vector2d from "@/types/Vector2d";
 import CoveragePathPlan from "@/types/CoveragePathPlan";
+import { Feature, Polygon } from 'geojson';
 
 export default function MissionPlanner() {
 
-  const [regionVertices, setRegionVertices] = useState<Vector2d[] | undefined>(undefined)
+  const [regionVertices, setRegionVertices] = useState<Feature<Polygon> | undefined>(undefined)
   const [missionParams, setMissionParams] = useState<MissionParams | undefined>(undefined)
   const [coveragePathPlan, setPathVertices] = useState<CoveragePathPlan | undefined>(undefined)
 
-  function handleUpdatedRegionVertices(newRegionVertices?: Vector2d[]) {
-    if (newRegionVertices === undefined) {
-      setMissionParams(undefined);
-      setPathVertices(undefined);
-    }
-
-    setRegionVertices(newRegionVertices);
-  }
-
   useEffect(() => {
-    if (missionParams === undefined || regionVertices === undefined) {
+    if (regionVertices === undefined) {
+      setMissionParams(undefined);
       setPathVertices(undefined);
       return;
     };
 
-    const coveragePathVertices = getCoveragePathVertices(
-      regionVertices,
-      missionParams.cruiseSpeedMetresPerSecond,
-      missionParams.waterFlowHeadingDegrees,
-      missionParams.altitudeMetres
-    );
+    if (missionParams) {
+      const coveragePathVertices = getCoveragePathVertices(
+        regionVertices,
+        missionParams.cruiseSpeedMetresPerSecond,
+        missionParams.waterFlowHeadingDegrees,
+        missionParams.altitudeMetres
+      );
 
-    setPathVertices(coveragePathVertices);
+      setPathVertices(coveragePathVertices);
+    }
   }, [regionVertices, missionParams])
 
   return (
     <div className="full-screen-div">
 
       <InteractiveMap
-        setRegionVertices={handleUpdatedRegionVertices}
+        setRegionVertices={setRegionVertices}
         coveragePathVertices={coveragePathPlan?.vertices}
       />
 
